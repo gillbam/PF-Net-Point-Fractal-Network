@@ -162,21 +162,21 @@ if opt.D_choose == 1:
             real_center = torch.FloatTensor(batch_size, 1, opt.crop_point_num, 3)       
             input_cropped1 = torch.FloatTensor(batch_size, opt.pnum, 3)
             input_cropped1 = input_cropped1.data.copy_(real_point)
-            real_point = torch.unsqueeze(real_point, 1)
-            input_cropped1 = torch.unsqueeze(input_cropped1,1)
+            real_point = torch.unsqueeze(real_point, 1) # shape = (bs, 1, opt.pnum, 3)
+            input_cropped1 = torch.unsqueeze(input_cropped1,1) # shape = (bs, 1, opt.pnum, 3)
             p_origin = [0,0,0]
-            if opt.cropmethod == 'random_center':
+            if opt.cropmethod == 'random_center': # random pick one view from options below, remove sphere points around the center
                 #Set viewpoints
                 choice = [torch.Tensor([1,0,0]),torch.Tensor([0,0,1]),torch.Tensor([1,0,1]),torch.Tensor([-1,0,0]),torch.Tensor([-1,1,0])]
                 for m in range(batch_size):
-                    index = random.sample(choice,1)#Random choose one of the viewpoint
+                    index = random.sample(choice,1) #Random choose one of the viewpoint [[-1, 1, 0]]
                     distance_list = []
-                    p_center = index[0]
-                    for n in range(opt.pnum):
-                        distance_list.append(distance_squre(real_point[m,0,n],p_center))
-                    distance_order = sorted(enumerate(distance_list), key  = lambda x:x[1])
+                    p_center = index[0] # [-1, 1, 0]
+                    for n in range(opt.pnum): # calculate distance of each point to the center
+                        distance_list.append(distance_squre(real_point[m,0,n],p_center)) # distance_list = [3, 6, 98, 1, 3] length 2048
+                    distance_order = sorted(enumerate(distance_list), key  = lambda x:x[1]) # distance_order = [(3, 1), (0, 3), (4, 3), (1, 6), (2, 98)]
                     
-                    for sp in range(opt.crop_point_num):
+                    for sp in range(opt.crop_point_num): # set first crop_point_num points to zero
                         input_cropped1.data[m,0,distance_order[sp][0]] = torch.FloatTensor([0,0,0])
                         real_center.data[m,0,sp] = real_point[m,0,distance_order[sp][0]]
             label.resize_([batch_size,1]).fill_(real_label)
